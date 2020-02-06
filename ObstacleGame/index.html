@@ -1,261 +1,258 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <meta charset="utf-8" />
-    <!--Game em HTML5 e Jasvascript-->
-    <title> Obstacle Game </title>
-    <!-- Nossa styles canvas ira centralizar o nosso jogo na pagina-->
+
+    <title>Obstacle Game</title>
+
     <style>
-        canvas {
-            position: absolute;
-            top: 0px;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
-            margin: auto;
-        }
+      canvas {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        margin: auto;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <script>
-        //variaveis do jogo altura e largura será usado para pegar o tamanho da janela que a pessoa esta usando no navegador. frames sempre será somado com cada quadro que eu reenderizar - Em quanto tempo aparecerá cada bloquinho
-        var canvas, ctx, Height, Width, frames = 0, maxJump = 3, speedblock = 6, stateCurrent, record,// canvas usaremos para desenhar as coisas e ctx (contexto) estão diretamente ligada -variaveis globais
+      var canvas,
+        ctx,
+        Height,
+        Width,
+        frames = 0,
+        maxJump = 3,
+        speedblock = 6,
+        stateCurrent,
+        record,
+        state = {
+          play: 0,
+          playing: 1,
+          loose: 2
+        },
+        floor = {
+          y: 550,
+          width: 50,
+          color: "#c74",
 
-            state = {// estados dos nosso jogo
-                play: 0,
-                playing: 1,
-                loose: 2
-            },
-            floor = { // Esse será o nosso chão
-                y: 550,
-                width: 50,
-                cor: "#ffdf70",
+          //Função para desenhar o nosso Chão
+          draw: function() {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(0, this.y, Height, this.width);
+          }
+        },
+        //  Player
+        redBlock = {
+          x: 50,
+          y: 0,
+          width: 50,
+          height: 50,
+          color: "#FF0000",
+          gravity: 1.5,
+          speed: 0,
+          jumpForce: 23,
+          amountJump: 0,
+          score: 0,
 
-                draw: function () { // tudo o que estiver dentro da função sera o nosso metodo executavel
-                    ctx.fillStyle = this.cor; // iremos utilizar a cor declarada ao nosso objeto
-                    ctx.fillRect(0, this.y, Height, this.width); //FillRect é para desenhar o nosso chão na tela. Então o nosso X começara em 0
-                }
-            },
-            redBlock = {//Sempre que fomos chamar alguma das nossa variaveias de dentro da nossa função bloco ultilizaremos o this.
-                x: 50, // nos 600 px de largura da nossa canvas ele comçara no ponto 50
-                y: 0,
-                width: 50,
-                height: 50,
-                cor: "#ff4e4e",
-                gravity: 1.5,
-                speed: 0,
-                jumpForce: 23,
-                amountJump: 0,
-                score: 0,
+          //Reiniciando a partida
+          update: function() {
+            this.speed += this.gravity;
+            this.y += this.speed;
 
-                update: function () {
-                    this.speed += this.gravity; //implementando gravidade ao nosso bloquinho
-                    this.y += this.speed;
-                    if (this.y > floor.y - this.height && stateCurrent != state.loose) { //So iremos segurar o bloco no chão agora caso o nosso estado de jogo for diferente de perdeu
-                        this.y = floor.y - this.height;//função de segura o bloco no chão
-                        this.amountJump = 0;// declarando para quano meu bloco cair no chao a quantidade de pulos volta a 0
-                        this.speedblock = 0;
-                    }// Se nossa if for verdade forçaremos o y do nosso bloco ser igual ao chão
-                },
-                reset: function (){// Quando perder o metodo reset voltara o nosso bloco para posição inicial
-                    this.speed = 0;
-                    this.y = 0;
-                    
-                    if ( this.score > record) {// Em nosso parametro declaramos que se score for maior que record
-                        localStorage.setItem("record", this.score);// atribuiremos o valor score para variavel record onde ela armazenara nas configurações no nossa local Storage 
-                        record = this.score; //record recebera o valor de score 
-                    }   
-                    this.score = 0;  //score inicia com 0  
-                },
-                jump: function () {
-                    if (this.amountJump < maxJump) {
-                        this.speed = - this.jumpForce; // aqui sera a nossa força de pulo, declamos a negativa pois ela sera uma força que atuara contra a gravidade
-                        this.amountJump++;
-                    }
-                },
-                draw: function () {
-                    ctx.fillStyle = this.cor;// cor do contexto
-                    ctx.fillRect(this.x, this.y, this.width, this.height);//Sempre manter a mesma ordem
-                }
-            },
-            obstacles = {// Criando os obstaculos
-                _obs: [],
-                cores: ["#7fe5f0", "#f07fe5", "#0e2f44", "#c3cfef", "#bada55"],
-                timeobs: 0, //declarando tempo incial em 0
-
-                insert: function () {
-                    this._obs.push({
-                        x: Width, 
-                        width: 40, //A largura deve ser constante e mutiplo de 600 para que nos consiga rodar sem erros 
-                      //  width: 30 + Math.floor(21 * Math.random()), //Agora a nossa largura dos blocos podem variar de 30 até 49 px                                                           
-                        height: 30 + Math.floor(120 * Math.random()),
-                        cor: this.cores[Math.floor(5 * Math.random())]
-                    });
-                    this.timeobs = 40 + Math.floor (1 + 2 / Math.random()) // mandara um bloco a cada 50 px 
-                },
-                update: function () {
-
-                    if (this.timeobs == 0) //quando for examente 0 chamaremos a função insert novamente
-                        this.insert();
-                    else
-                        this.timeobs--; // se não continuaremos decrementando
-
-                    for (var i = 0, size = this._obs.length; i < size; i++) {// selecionando cada posição do nosso array até o final dele 
-
-                        var obs = this._obs[i];//Apenas abreviando
-
-                        obs.x -= speedblock; // encrementando velocidade em cada um de nossos obstaculos
-
-                        if (redBlock.x < obs.x + obs.width && redBlock.x + redBlock.width >= obs.x && redBlock.y + redBlock.height >= floor.y - obs.height) //usamos o && para as nossa 3 condições ser verdade ao mesmo tempo
-                            stateCurrent = state.loose;
-
-                        else if (obs.x == 0) //Função para contar quantos obstatucolos o nosso bloco  pulou, se o x do nosso obstaculo for = a 0 px da nossa canvas isso quer dizer que nos conseguimos pular o bloquinho 
-                            redBlock.score ++;
-                        
-                        
-                        else if (obs.x <= -obs.width) {// Usaremos o if para remover o elemento criado no nosso array isso para que esse elemento não pese na memoria enquanto estiver em execução
-                            this._obs.splice(i, 1);// splice fara a função de excluir o obstaculo  que criamos em nosso indice 
-                            size--;
-                            i--;    // nossas variaveis "--" foram declarada para corrigir um erro que quando a mais de 1 obs na sequencia ele não reconhece o splice
-                        }
-
-                    }
-                },
-                clean:function (){//Função para limpar o nosso array de obstaculos ao final do jogo
-                    this._obs = [];
-                },
-
-                draw: function () {
-                    for (var i = 0, size = this._obs.length; i < size; i++) {//teremos que rodar o nosso vetor inteiro para desenharmos todos os blocos que estão no vetor
-                        var obs = this._obs[i]; //apenas abreviando o nome da nossa var 
-                        ctx.fillStyle = obs.cor;
-                        ctx.fillRect(obs.x, floor.y - obs.height, obs.width, obs.height);//Desenhamos o nosso objeto
-                    }
-                }
-            };
-
-        // função para verificar quando o usuario clicou
-        function click(event) {
-            if (stateCurrent == state.playing)
-                redBlock.jump(); //Chamando a função para o nosso bloco pular,precisamos colocar um limite de pulos
-
-            else if (stateCurrent == state.play) {
-                stateCurrent = state.playing;
+            if (this.y > floor.y - this.height && stateCurrent != state.loose) {
+              this.y = floor.y - this.height;
+              this.amountJump = 0;
+              this.speedblock = 0;
             }
+          },
+          // Voltando todo jogo para o estado inicial
+          reset: function() {
+            this.speed = 0;
+            this.y = 0;
 
-            else if (stateCurrent == state.loose && redBlock.y >= 2* Height ) {
-                stateCurrent = state.play;
-                obstacles.clean();
-                redBlock.reset();
+            // Função Record
+            if (this.score > record) {
+              localStorage.setItem("record", this.score);
+              record = this.score;
             }
-        }
-        // Função principal
-
-        function main() {
-            Height = window.innerHeight; // devolverar o tamanho da altura da janela do usuario
-            Width = window.innerWidth; // terá que devolver a largura da janela
-
-            if (Width >= 500) { // se o valor da janela for maior que 500 atribuimos os a nossa autura e largura, o minimo do valor será 500
-                Width = 600;
-                Height = 600;
-
+            this.score = 0;
+          },
+          // Função de pular
+          jump: function() {
+            if (this.amountJump < maxJump) {
+              this.speed = -this.jumpForce;
+              this.amountJump++;
             }
-            canvas = document.createElement('canvas');//Criando o elemento canvas
-            canvas.width = Width;
+          },
+          draw: function() {
+            ctx.fillStyle = this.color; // cor do contexto
+            ctx.fillRect(this.x, this.y, this.width, this.height); //Sempre manter a mesma ordem
+          }
+        },
+        //Criando os obstaculos
+        obstacles = {
+          _obs: [],
+          colors: ["#7fe5f0", "#f07fe5", "##8A2BE2", "#c3cfef", "#bada55"],
+          timeobs: 0,
+          insert: function() {
+            this._obs.push({
+              x: Width,
+              width: 40, //A largura deve ser constante e mutiplo de 600 para que nos consiga rodar sem erros
+              height: 30 + Math.floor(120 * Math.random()),
+              color: this.colors[Math.floor(5 * Math.random())]
+            });
 
-            canvas.height = Height; // atribuido a lar e alt
-            canvas.style.border = " 1px solid #000";
-
-            ctx = canvas.getContext("2d"); // Chamamos ele de 2d// então que nos desenhamos nesse contexto será elementos 2d
-            document.body.appendChild(canvas);
-            document.addEventListener("mousedown", click);// adicionando o evento de 1 click, então sempre que a pessoa clicar o nosso eventlistener ira adicionar na nossa função click 
-
-            stateCurrent = state.play; //Primeiro estado do jogo para iniciar
-            record = localStorage.getItem("record");//pegando o item chamado record em nosso local storege
-            if (record == null) // record igual a  nada por enquanto
-            record = 0;// record inicia com 0
-            wheel();// chamando a função rodar
-        }
-
-
-        // Loop do nosso jogo
-        function wheel() {
-            update();
-            drawing();
-
-            window.requestAnimationFrame(wheel); // Declaramos para a nossa animação conseguir entrar em loop
-        }
-
-        // Aqui é onde vamos atualizar o status nosso personagem e os obstaculos do jogo
-        function update() {
-            frames++;
-            redBlock.update();
-
-            if (stateCurrent == state.playing) 
-                obstacles.update()
-
-            
-        }
-        // nessa função iremos desenhar depois que atualizarmos
-        function drawing() {
-            ctx.fillStyle = "#50beff"; // A cor da nossa canvas um azul claro
-            ctx.fillRect(0, 0, Width, Height); //Nossos objetos para desenho sempre começa topo esquerdo da nossa canvas 
-
-            ctx.fillStyle = "#fff" ;//cor do nosso score
-            ctx.font = "50px Arial"; // tamanho da fonte  e tipo
-            ctx.fillText(redBlock.score, 30, 68); //Encrementamos 30 px para direita + 30 px para baixo o nosso score pois declaramos para que todos os nosso objeto comecem no parametro 0 a esquerda e 0 em cima 
-
-
-            if (stateCurrent == state.play) {//desenhando o quadrado verde para quando clicar começar o jogo
-                ctx.fillStyle = "green";
-                ctx.fillRect(Width / 2 - 50, Height / 2 - 50, 100, 100);//alinhando o nosso quadrado para ficar bem no centro da nossa canvas
-
-            } else if (stateCurrent == state.loose) {
-                ctx.fillStyle = "red";
-                ctx.fillRect(Width / 2 - 50, Height / 2 - 50, 100, 100);
-                
-                ctx.save(); // para salvar  a imagem do score
-                ctx.translate(Width / 2 , Height / 2); // direcionando a objeto para o meio da tela
-                ctx.fillStyle = "#fff"; // declarando a cor para ficar visivel se não ele usara o vermelho
-
-                if( redBlock.score > record )
-                  ctx.fillText ("New Record!", -153, -65);
-                  else if ( record < 10)
-                    ctx.fillText ("Record " + record, -99, -65);
-
-                  else if (record >= 10 && record <100)
-                    ctx.fillText ("Record " + record,-112,-65 );
-
-                else
-                ctx.fillText ("record " + record, -112,-65);
-
-              if(redBlock.score < 10)
-                ctx.fillText (redBlock.score, -13, 19); //Aqui estamos alinhando dentro do nosso quadrado  -13 px para esquerda e 19 px para baixo
-                
-                else if (redBlock.score >= 10 && redBlock.score < 100)
-                ctx.fillText (redBlock.score, -26, 19); // alinhando conforme o tamanho numero então como tera que apresentar 2 numero no caso o alinhamento para esquerda tem que ser o dobro
-
-
-                else 
-                ctx.fillText (redBlock.score, -39, 19); //alinhado o triplo do tamanho do primeiro 
-
-                ctx.restore();
-                            
+            this.timeobs = 40 + Math.floor(1 + 2 / Math.random());
+          },
+          update: function() {
+            if (this.timeobs == 0) {
+              this.insert();
+            } else {
+              this.timeobs--;
             }
+            // selecionando cada posição do nosso array até o final dele
+            for (var i = 0, size = this._obs.length; i < size; i++) {
+              var obs = this._obs[i];
 
-            else if (stateCurrent == state.playing)
-                obstacles.draw(); //declarado antes do nosso bloco pois queremos que o obstaculos fiquem atras do nosso bloco
+              // encrementando velocidade em cada um de nossos obstaculos
+              obs.x -= speedblock;
+              if (
+                redBlock.x < obs.x + obs.width &&
+                redBlock.x + redBlock.width >= obs.x &&
+                redBlock.y + redBlock.height >= floor.y - obs.height
+              ) {
+                stateCurrent = state.loose;
+              } else if (obs.x == 0) {
+                //Função para contar quantos obstatucolos o nosso bloco  pulou
+                redBlock.score++;
+              } else if (obs.x <= -obs.width) {
+                //Removendo os obstaculos após chegar ao fim da canvas
+                this._obs.splice(i, 1);
+                size--;
+                i--;
+              }
+            }
+          },
+          //Limpando o array de obstaculos
+          clean: function() {
+            this._obs = [];
+          },
 
+          //Desenhando os nosso obstaculos em tela
+          draw: function() {
+            for (var i = 0, size = this._obs.length; i < size; i++) {
+              var obs = this._obs[i];
+              ctx.fillStyle = obs.color;
+              ctx.fillRect(obs.x, floor.y - obs.height, obs.width, obs.height);
+            }
+          }
+        };
 
+      // Evento de pulo por cliques
+      function click(event) {
+        if (stateCurrent == state.playing) {
+          redBlock.jump();
+        } else if (stateCurrent == state.play) {
+          stateCurrent = state.playing;
+        } else if (stateCurrent == state.loose && redBlock.y >= 2 * Height) {
+          stateCurrent = state.play;
+          obstacles.clean();
+          redBlock.reset();
+        }
+      }
 
-            floor.draw(); // Chamando o nosso objeto desenha para executar na função desenhas
-            redBlock.draw();
+      // Função principal
+      function main() {
+        Height = window.innerHeight;
+        Width = window.innerWidth;
+
+        if (Width >= 500) {
+          Width = 600;
+          Height = 600;
+        }
+        //Criando o elemento canvas
+        canvas = document.createElement("canvas");
+        canvas.width = Width;
+        canvas.height = Height;
+        canvas.style.border = " 1px solid #000";
+
+        ctx = canvas.getContext("2d"); // Declarando o tipo do conteudo
+        document.body.appendChild(canvas);
+        document.addEventListener("mousedown", click); //ouvindos eventos de click
+
+        //Primeiro estado do jogo para iniciar
+        stateCurrent = state.play;
+        record = localStorage.getItem("record");
+        if (record == null) record = 0;
+        wheel();
+      }
+      // Estado de loop do nosso jogo
+      function wheel() {
+        update();
+        drawing();
+        window.requestAnimationFrame(wheel);
+      }
+
+      // Atualizando status player e obstaculos
+      function update() {
+        frames++;
+        redBlock.update();
+
+        if (stateCurrent == state.playing) {
+          obstacles.update();
+        }
+      }
+      // Desenhando a nossa tela
+      function drawing() {
+        ctx.fillStyle = "#87cefa";
+        ctx.fillRect(0, 0, Width, Height);
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "50px Arial";
+        ctx.fillText(redBlock.score, 30, 68);
+
+        //Desenhando o botão para começar o jogo
+        if (stateCurrent == state.play) {
+          ctx.fillStyle = "green";
+          ctx.fillRect(Width / 2 - 50, Height / 2 - 50, 100, 100);
+        } else if (stateCurrent == state.loose) {
+          ctx.fillStyle = "red";
+          ctx.fillRect(Width / 2 - 50, Height / 2 - 50, 100, 100);
+
+          ctx.save();
+          ctx.translate(Width / 2, Height / 2);
+          ctx.fillStyle = "#fff";
+          //Desenhando nosso score em tela
+          if (redBlock.score > record) {
+            ctx.fillText("New Record!", -153, -65);
+          } else if (record < 10) {
+            ctx.fillText("Record " + record, -99, -65);
+          } else if (record >= 10 && record < 100) {
+            ctx.fillText("Record " + record, -112, -65);
+          } else {
+            ctx.fillText("record " + record, -112, -65);
+          }
+          if (redBlock.score < 10) {
+            ctx.fillText(redBlock.score, -13, 19);
+          } else if (redBlock.score >= 10 && redBlock.score < 100) {
+            ctx.fillText(redBlock.score, -26, 19);
+          } else {
+            ctx.fillText(redBlock.score, -39, 19);
+          }
+
+          ctx.restore();
+        } else if (stateCurrent == state.playing) {
+          obstacles.draw();
         }
 
-        main(); //Chamando a função principal para inicializar o jogo
+        floor.draw();
+        redBlock.draw();
+      }
+
+      main();
     </script>
-</body>
-
+  </body>
 </html>
