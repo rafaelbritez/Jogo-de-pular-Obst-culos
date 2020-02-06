@@ -38,7 +38,7 @@
           width: 50,
           color: "#c74",
 
-          //Função para desenhar o nosso Chão
+          //Função para desenhar o nosso chão
           draw: function() {
             ctx.fillStyle = this.color;
             ctx.fillRect(0, this.y, Height, this.width);
@@ -68,7 +68,7 @@
               this.speedblock = 0;
             }
           },
-          // Voltando todo jogo para o estado inicial
+          // Voltando todo o jogo para o estado inicial
           reset: function() {
             this.speed = 0;
             this.y = 0;
@@ -88,7 +88,7 @@
             }
           },
           draw: function() {
-            ctx.fillStyle = this.color; // cor do contexto
+            ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height); //Sempre manter a mesma ordem
           }
         },
@@ -100,7 +100,7 @@
           insert: function() {
             this._obs.push({
               x: Width,
-              width: 40, //A largura deve ser constante e mutiplo de 600 para que nos consiga rodar sem erros
+              width: 40, //A largura deve ser constante e mutiplo de 600 para que o jogo consiga rodar sem erros
               height: 30 + Math.floor(120 * Math.random()),
               color: this.colors[Math.floor(5 * Math.random())]
             });
@@ -126,7 +126,7 @@
               ) {
                 stateCurrent = state.loose;
               } else if (obs.x == 0) {
-                //Função para contar quantos obstatucolos o nosso bloco  pulou
+                //Função para contar quantos obstatucolos o nosso bloco pulou
                 redBlock.score++;
               } else if (obs.x <= -obs.width) {
                 //Removendo os obstaculos após chegar ao fim da canvas
